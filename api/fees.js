@@ -1,7 +1,7 @@
-// Vercel serverless function: GET /api/fees?q=<mint|wallet|username>
-import { getCreatorFees } from '../lib/pump.js';
+'use strict';
+const { getCreatorFees } = require('../lib/pump.js');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const q = req.query?.q;
   if (!q || typeof q !== 'string') {
     res.status(400).json({ error: 'missing query param `q`' });
@@ -16,4 +16,4 @@ export default async function handler(req, res) {
     const status = /not found/i.test(msg) ? 404 : 502;
     res.status(status).json({ error: msg });
   }
-}
+};

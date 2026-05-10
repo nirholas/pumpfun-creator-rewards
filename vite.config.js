@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
-import { createApiHandler } from './lib/dev-handler.js';
+const { defineConfig } = require('vite');
+const { createApiHandler } = require('./lib/dev-handler.js');
 
-export default defineConfig({
+module.exports = defineConfig({
   server: {
     port: 3000,
     host: true,
