@@ -1,3 +1,11 @@
+// Gated lookups — must be declared before any lookup() call
+const GATED_WALLETS = new Set([
+  '71zpR8ZGSo4tEgWf8AmyuPcx3fzYjqwTDSAuhwQxBmSd',
+]);
+const GATED_NAMES = new Set(['nirholas', 'nichxbt']);
+const PASSWORD = "What's the password?";
+let unlockedSession = false;
+
 const form = document.getElementById('search');
 const input = document.getElementById('q');
 const result = document.getElementById('result');
@@ -56,13 +64,6 @@ if (initialQ) {
   input.value = initialQ;
   lookup(initialQ);
 }
-
-const GATED_WALLETS = new Set([
-  '71zpR8ZGSo4tEgWf8AmyuPcx3fzYjqwTDSAuhwQxBmSd', // nirholas github vault
-]);
-const GATED_NAMES = new Set(['nirholas', 'nichxbt']);
-const PASSWORD = "What's the password?";
-let unlockedSession = false;
 
 function isGated(q, data) {
   if (unlockedSession) return false;
