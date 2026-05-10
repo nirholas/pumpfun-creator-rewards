@@ -38,6 +38,7 @@ form.addEventListener('submit', async (e) => {
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'not found');
       q = `x:${d.id}`;
+      window._xUsernameHint = { id: d.id, username: xUsername };
     } catch (err) {
       result.innerHTML = `<div class="err">error: couldn't resolve @${escapeHtml(xUsername)} — ${escapeHtml(err.message)}</div>`;
       button.disabled = false;
@@ -118,7 +119,13 @@ async function lookup(q) {
 
     const res = await fetch(`/api/fees?q=${encodeURIComponent(q)}`);
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || `request failed (${res.status})`);
+    if (!res.ok) {
+      let msg = data?.error || `request failed (${res.status})`;
+      // Replace numeric X ID in error with original username
+      const hint = window._xUsernameHint;
+      if (hint) msg = msg.replace(hint.id, '@' + hint.username).replace(/"(\d+)"/, `"@${hint.username}"`);
+      throw new Error(msg);
+    }
 
     // Gated wallet check after resolving
     if (isGated(q, data)) {
