@@ -4,9 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pump.fun creator fees</title>
-    <meta name="description" content="Look up how much a Pump.fun creator has earned in creator-reward fees, by coin mint, wallet, or username." />
-    <meta property="og:title" content="Pump.fun creator fees" />
-    <meta property="og:description" content="Enter a coin, wallet, or username to see lifetime creator-fee earnings on Pump.fun." />
+    <meta name="description" content="Look up how much a Pump.fun creator has earned in creator-reward fees." />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
@@ -17,12 +15,23 @@
         <p class="sub">Lifetime creator-reward earnings for any coin, wallet, or username.</p>
       </header>
 
+      <div class="type-tabs">
+        <button class="tab active" data-prefix="" data-placeholder="GitHub username, wallet, mint, or pump username">auto-detect</button>
+        <button class="tab" data-prefix="github:" data-placeholder="GitHub username">GitHub</button>
+        <button class="tab" data-prefix="x:" data-placeholder="numeric X/Twitter user ID">X</button>
+        <button class="tab" data-prefix="tiktok:" data-placeholder="numeric TikTok user ID">TikTok</button>
+        <button class="tab" data-prefix="discord:" data-placeholder="numeric Discord user ID">Discord</button>
+        <button class="tab" data-prefix="pump:" data-placeholder="pump.fun username">Pump</button>
+        <button class="tab" data-prefix="wallet" data-placeholder="Solana wallet or vault address">Wallet</button>
+        <button class="tab" data-prefix="mint" data-placeholder="coin mint address">Coin mint</button>
+      </div>
+
       <form id="search">
         <input
           id="q"
           name="q"
           type="text"
-          placeholder="github:user · x:id · tiktok:id · mint · wallet"
+          placeholder="GitHub username, wallet, mint, or pump username"
           autocomplete="off"
           autocapitalize="off"
           spellcheck="false"
@@ -31,10 +40,6 @@
         <button type="submit">look up</button>
       </form>
 
-      <p class="examples">
-        github:username &nbsp;·&nbsp; x:numeric_id &nbsp;·&nbsp; tiktok:numeric_id &nbsp;·&nbsp; coin mint &nbsp;·&nbsp; wallet address &nbsp;·&nbsp; pump username
-      </p>
-
       <section id="result" hidden></section>
 
       <footer>
@@ -42,7 +47,7 @@
           Data: <a href="https://swap-api.pump.fun" target="_blank" rel="noopener">swap-api.pump.fun</a> +
           <a href="https://frontend-api-v3.pump.fun" target="_blank" rel="noopener">frontend-api-v3.pump.fun</a>.
           Not affiliated with Pump.fun.
-          <a href="/api/fees?q=pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn">JSON API</a>.
+          <a href="/api/fees?q=github:nirholas">JSON API</a>.
         </p>
       </footer>
     </main>

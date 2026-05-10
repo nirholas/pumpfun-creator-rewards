@@ -3,19 +3,30 @@ const input = document.getElementById('q');
 const result = document.getElementById('result');
 const button = form.querySelector('button');
 
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const q = input.value.trim();
-  if (!q) return;
-  lookup(q);
+// Tab switching
+let activePrefix = '';
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+    tab.classList.add('active');
+    activePrefix = tab.dataset.prefix;
+    input.placeholder = tab.dataset.placeholder;
+    // Strip any existing prefix from the current input value
+    const bare = input.value.replace(/^[a-z]+:/i, '');
+    input.value = activePrefix && activePrefix !== 'wallet' && activePrefix !== 'mint' ? bare : bare;
+    input.focus();
+  });
 });
 
-document.querySelectorAll('.examples a[data-q]').forEach((a) => {
-  a.addEventListener('click', (e) => {
-    e.preventDefault();
-    input.value = a.dataset.q;
-    lookup(a.dataset.q);
-  });
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const raw = input.value.trim();
+  if (!raw) return;
+  // Prepend prefix if tab is set and value doesn't already have one
+  const hasPrefix = /^[a-z]+:/i.test(raw);
+  const shouldPrefix = activePrefix && activePrefix !== 'wallet' && activePrefix !== 'mint';
+  const q = (shouldPrefix && !hasPrefix) ? activePrefix + raw : raw;
+  lookup(q);
 });
 
 // Pick up ?q= from URL on load.

@@ -46,10 +46,41 @@ header .sub {
   font-size: 14px;
 }
 
+.type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tab {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab:hover {
+  border-color: var(--accent-dim);
+  color: var(--text);
+}
+
+.tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #06170d;
+  font-weight: 600;
+}
+
 form {
   display: flex;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 24px;
 }
 
 #q {
