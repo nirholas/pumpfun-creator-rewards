@@ -353,6 +353,87 @@ button:disabled { background: var(--panel-2); color: var(--muted); cursor: wait;
   80%, 100% { content: '...'; }
 }
 
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tl-event {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.tl-event:last-child { border-bottom: 0; }
+
+.tl-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+.tl-dot--distrib { background: var(--accent); }
+.tl-dot--config  { background: var(--muted); }
+
+.tl-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.tl-label {
+  font-weight: 500;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.tl-meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.tl-amount {
+  color: var(--accent);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.tl-shares {
+  color: var(--muted);
+  font-size: 11px;
+  width: 100%;
+}
+
+.tl-tx {
+  color: var(--muted);
+  font-size: 11px;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+.tl-tx:hover { color: var(--text); }
+
+.load-more {
+  margin-top: 12px;
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  padding: 8px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.load-more:hover { border-color: var(--accent-dim); color: var(--text); }
+.load-more:disabled { cursor: wait; }
+
 footer {
   margin-top: 48px;
   font-size: 12px;

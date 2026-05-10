@@ -222,6 +222,117 @@ function render(data) {
   }
 
   result.innerHTML = html;
+
+  // For mint views, load and inject the distribution timeline
+  if (isMint && resolved.mint) {
+    loadTimeline(resolved.mint);
+  }
+}
+
+async function loadTimeline(mint, cursor = null) {
+  const containerId = 'timeline-section';
+  let container = document.getElementById(containerId);
+  if (!container) {
+    container = document.createElement('div');
+    container.id = containerId;
+    result.appendChild(container);
+  }
+  if (!cursor) container.innerHTML = '<div class="loading" style="padding:16px 0">loading timeline</div>';
+
+  try {
+    const url = `/api/timeline?q=${encodeURIComponent(mint)}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    const { items, pagination } = data;
+    const distributions = (items || []).filter(e => e.eventType === 'distribution' && Number(e.totalDistributed) > 0);
+    const others = (items || []).filter(e => e.eventType !== 'distribution');
+
+    if (!cursor) {
+      // Build full timeline section
+      const allEvents = [...others, ...distributions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      if (!allEvents.length && !pagination?.hasMore) {
+        container.innerHTML = '';
+        return;
+      }
+      container.innerHTML = `
+        <div class="card" id="timeline-card">
+          <p class="section-h">distribution timeline</p>
+          <div class="timeline" id="timeline-events">
+            ${renderTimelineEvents(distributions, others)}
+          </div>
+          ${pagination?.hasMore ? `<button class="load-more" data-mint="${escapeAttr(mint)}" data-cursor="${escapeAttr(pagination.nextCursor)}">load more</button>` : ''}
+        </div>
+      `;
+      document.querySelector('.load-more')?.addEventListener('click', function () {
+        this.disabled = true;
+        this.textContent = 'loading...';
+        loadTimeline(mint, this.dataset.cursor);
+      });
+    } else {
+      // Append more events
+      const eventsEl = document.getElementById('timeline-events');
+      if (eventsEl) eventsEl.insertAdjacentHTML('beforeend', renderTimelineEvents(distributions, others));
+      const btn = document.querySelector('.load-more');
+      if (btn) {
+        if (pagination?.hasMore) {
+          btn.dataset.cursor = pagination.nextCursor;
+          btn.disabled = false;
+          btn.textContent = 'load more';
+        } else {
+          btn.remove();
+        }
+      }
+    }
+  } catch (err) {
+    if (!cursor) container.innerHTML = '';
+  }
+}
+
+function renderTimelineEvents(distributions, configEvents) {
+  let html = '';
+
+  // Config-change events (create/update/lock)
+  for (const e of configEvents) {
+    const label = { coin_created: 'coin created', create: 'fee sharing created', update: 'fee sharing updated', lock: 'fee sharing locked' }[e.eventType] || e.eventType;
+    const shares = e.shareholders?.map(s => `${short(s.address)} ${s.shareBps / 100}%`).join(', ') || '';
+    html += `
+      <div class="tl-event tl-config">
+        <div class="tl-dot tl-dot--config"></div>
+        <div class="tl-body">
+          <span class="tl-label">${escapeHtml(label)}</span>
+          <span class="tl-meta">${fmtDate(e.timestamp)}</span>
+          ${shares ? `<span class="tl-shares">${escapeHtml(shares)}</span>` : ''}
+          ${e.tx ? `<a class="tl-tx" href="https://solscan.io/tx/${encodeURIComponent(e.tx)}" target="_blank" rel="noopener">tx</a>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // Distribution events
+  for (const e of distributions) {
+    const lamports = Number(e.totalDistributed);
+    const sol = (lamports / 1e9).toFixed(4);
+    html += `
+      <div class="tl-event tl-distrib">
+        <div class="tl-dot tl-dot--distrib"></div>
+        <div class="tl-body">
+          <span class="tl-label">distribution</span>
+          <span class="tl-meta">${fmtDate(e.timestamp)}</span>
+          <span class="tl-amount">${sol} SOL</span>
+          ${e.tx ? `<a class="tl-tx" href="https://solscan.io/tx/${encodeURIComponent(e.tx)}" target="_blank" rel="noopener">tx</a>` : ''}
+        </div>
+      </div>
+    `;
+  }
+  return html;
+}
+
+function fmtDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function renderTotals(t) {
