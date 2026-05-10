@@ -18,14 +18,34 @@ document.querySelectorAll('.tab').forEach((tab) => {
   });
 });
 
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const raw = input.value.trim();
   if (!raw) return;
-  // Prepend prefix if tab is set and value doesn't already have one
+
   const hasPrefix = /^[a-z]+:/i.test(raw);
   const shouldPrefix = activePrefix && activePrefix !== 'wallet' && activePrefix !== 'mint';
-  const q = (shouldPrefix && !hasPrefix) ? activePrefix + raw : raw;
+  let q = (shouldPrefix && !hasPrefix) ? activePrefix + raw : raw;
+
+  // For X tab with a non-numeric username, resolve to numeric ID first
+  if (q.startsWith('x:') && !/^x:\d+$/.test(q)) {
+    const xUsername = q.slice(2).trim();
+    button.disabled = true;
+    result.hidden = false;
+    result.innerHTML = '<div class="loading">resolving @' + escapeHtml(xUsername) + '</div>';
+    try {
+      const r = await fetch(`/api/xid?username=${encodeURIComponent(xUsername)}`);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'not found');
+      q = `x:${d.id}`;
+    } catch (err) {
+      result.innerHTML = `<div class="err">error: couldn't resolve @${escapeHtml(xUsername)} — ${escapeHtml(err.message)}</div>`;
+      button.disabled = false;
+      return;
+    }
+    button.disabled = false;
+  }
+
   lookup(q);
 });
 
