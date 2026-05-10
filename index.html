@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pump.fun creator fees</title>
+    <meta name="description" content="Look up how much a Pump.fun creator has earned in creator-reward fees, by coin mint, wallet, or username." />
+    <meta property="og:title" content="Pump.fun creator fees" />
+    <meta property="og:description" content="Enter a coin, wallet, or username to see lifetime creator-fee earnings on Pump.fun." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>pump.fun creator fees</h1>
+        <p class="sub">Lifetime creator-reward earnings for any coin, wallet, or username.</p>
+      </header>
+
+      <form id="search">
+        <input
+          id="q"
+          name="q"
+          type="text"
+          placeholder="coin mint, wallet, or @username"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          required
+        />
+        <button type="submit">look up</button>
+      </form>
+
+      <p class="examples">
+        enter a coin mint, wallet address, or pump.fun username
+      </p>
+
+      <section id="result" hidden></section>
+
+      <footer>
+        <p>
+          Data: <a href="https://swap-api.pump.fun" target="_blank" rel="noopener">swap-api.pump.fun</a> +
+          <a href="https://frontend-api-v3.pump.fun" target="_blank" rel="noopener">frontend-api-v3.pump.fun</a>.
+          Not affiliated with Pump.fun.
+          <a href="/api/fees?q=pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn">JSON API</a>.
+        </p>
+      </footer>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

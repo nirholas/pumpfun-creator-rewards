@@ -1,0 +1,17 @@
+{
+  "name": "pumpfun-creator-fees",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Look up Pump.fun creator-fee earnings by coin mint, wallet, or username.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vercel dev",
+    "api": "node scripts/dev-api.mjs"
+  },
+  "devDependencies": {
+    "vite": "^5.4.10"
+  }
+}
