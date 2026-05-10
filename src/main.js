@@ -36,6 +36,52 @@ if (initialQ) {
   lookup(initialQ);
 }
 
+const GATED_WALLETS = new Set([
+  '71zpR8ZGSo4tEgWf8AmyuPcx3fzYjqwTDSAuhwQxBmSd', // nirholas github vault
+]);
+const GATED_NAMES = new Set(['nirholas', 'nichxbt']);
+const PASSWORD = "What's the password?";
+let unlockedSession = false;
+
+function isGated(q, data) {
+  if (unlockedSession) return false;
+  const lq = q.toLowerCase().replace(/^(github:|gh:|x:|pump:)/, '');
+  if (GATED_NAMES.has(lq)) return true;
+  if (data?.resolved?.wallet && GATED_WALLETS.has(data.resolved.wallet)) return true;
+  return false;
+}
+
+function promptPassword(onSuccess) {
+  result.hidden = false;
+  result.innerHTML = `
+    <div class="card" id="pw-gate">
+      <p class="section-h">restricted lookup</p>
+      <p style="font-size:14px;color:var(--muted);margin:0 0 16px">This creator has password-protected their stats.</p>
+      <form id="pw-form" style="display:flex;gap:8px">
+        <input id="pw-input" type="password" placeholder="enter password" autocomplete="off"
+          style="flex:1;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 12px;font:inherit;font-size:14px;outline:none" />
+        <button type="submit" style="background:var(--accent);color:#06170d;border:0;border-radius:8px;padding:0 16px;font:inherit;font-size:14px;font-weight:600;cursor:pointer">unlock</button>
+      </form>
+      <p id="pw-err" style="font-size:12px;color:var(--danger);margin:8px 0 0;min-height:16px"></p>
+    </div>
+  `;
+  const pwForm = document.getElementById('pw-form');
+  const pwInput = document.getElementById('pw-input');
+  const pwErr = document.getElementById('pw-err');
+  pwInput.focus();
+  pwForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (pwInput.value === PASSWORD) {
+      unlockedSession = true;
+      onSuccess();
+    } else {
+      pwErr.textContent = 'wrong password.';
+      pwInput.value = '';
+      pwInput.focus();
+    }
+  });
+}
+
 async function lookup(q) {
   result.hidden = false;
   result.innerHTML = '<div class="loading">looking up</div>';
@@ -43,9 +89,24 @@ async function lookup(q) {
   history.replaceState(null, '', `?q=${encodeURIComponent(q)}`);
 
   try {
+    // Quick gated-name check before fetching
+    if (!unlockedSession && isGated(q, null)) {
+      button.disabled = false;
+      promptPassword(() => lookup(q));
+      return;
+    }
+
     const res = await fetch(`/api/fees?q=${encodeURIComponent(q)}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error || `request failed (${res.status})`);
+
+    // Gated wallet check after resolving
+    if (isGated(q, data)) {
+      button.disabled = false;
+      promptPassword(() => lookup(q));
+      return;
+    }
+
     render(data);
   } catch (err) {
     result.innerHTML = `<div class="err">error: ${escapeHtml(err.message || String(err))}</div>`;
