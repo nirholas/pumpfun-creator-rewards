@@ -143,9 +143,14 @@ async function lookup(q) {
   }
 }
 
+// Earnings breakdown for the current lookup, once /api/earnings lands.
+let earningsData = null;
+let coinSort = 'earned';
+
 function render(data) {
-  const { resolved, totals, totalsForCoin, coins } = data;
+  const { resolved, totals, coins, coinsTruncated } = data;
   const isMint = resolved.type === 'mint';
+  earningsData = null;
 
   // Header card varies by input type.
   let head;
@@ -194,27 +199,50 @@ function render(data) {
     `;
   }
 
+  // A mint lookup asks "what did THIS coin earn?" — so lead with that, and keep
+  // the creator's lifetime figure as clearly-labelled context underneath. (The
+  // page used to answer that question with the creator's all-coin total.)
+  const coinEarnedBlock = isMint
+    ? `
+      <p class="section-h">this coin paid ${scope}</p>
+      <div id="coin-earned">${skeletonTotals()}</div>
+      <p class="section-h" style="margin-top:22px">the creator's lifetime earnings, all coins</p>
+      ${renderTotals(totals)}
+      ${coinCountNote(totals)}
+    `
+    : `
+      <p class="section-h">creator-fee earnings ${scope}</p>
+      ${renderTotals(totals)}
+      ${coinCountNote(totals)}
+    `;
+
   let html = `
     <div class="card">
       ${head}
       ${recipientBanner}
-      <p class="section-h">creator-fee earnings ${scope}</p>
-      ${renderTotals(totals)}
+      ${coinEarnedBlock}
     </div>
+    <div id="insights"></div>
   `;
 
-  // Coin count note
-  if (totals?.mintCount > 0) {
-    html = html.replace('</div>\n  ', `<p style="margin:12px 0 0;font-size:12px;color:var(--muted)">across ${totals.mintCount} coin${totals.mintCount === 1 ? '' : 's'}</p>\n</div>\n  `);
-  }
-
-  // Coin list (always show if available).
   if (coins && coins.length) {
     html += `
       <div class="card">
-        <p class="section-h">coins earning fees</p>
-        <div class="coin-list">
-          ${coins.map(coinRow).join('')}
+        <div class="list-head">
+          <p class="section-h" style="margin:0">coins sharing fees <span class="count">${coins.length}</span></p>
+          <label class="sort">
+            <span class="sr-only">sort coins by</span>
+            <select id="coin-sort">
+              <option value="earned">most earned</option>
+              <option value="recent">last paid</option>
+              <option value="mcap">market cap</option>
+              <option value="share">share %</option>
+            </select>
+          </label>
+        </div>
+        ${coinsTruncated ? `<p class="note">showing the first ${coins.length} coins — this creator has more than we can page through.</p>` : ''}
+        <div class="coin-list" id="coin-list">
+          ${coins.map((c) => coinRow(c, null)).join('')}
         </div>
       </div>
     `;
@@ -224,10 +252,149 @@ function render(data) {
 
   result.innerHTML = html;
 
-  // For mint views, load and inject the distribution timeline
-  if (isMint && resolved.mint) {
-    loadTimeline(resolved.mint);
+  const sortEl = document.getElementById('coin-sort');
+  if (sortEl) {
+    // The sort preference survives a new lookup, so the control has to show the
+    // sort that is actually in effect — not silently snap back to its default.
+    sortEl.value = coinSort;
+    sortEl.addEventListener('change', (e) => {
+      coinSort = e.target.value;
+      redrawCoinList();
+    });
   }
+
+  if (isMint && resolved.mint) loadTimeline(resolved.mint);
+
+  // The breakdown walks a timeline per coin, so it lands a beat after the
+  // summary. Everything above stays usable while it does.
+  loadEarnings(data.query);
+}
+
+function coinCountNote(totals) {
+  if (!(totals?.mintCount > 0)) return '';
+  return `<p class="across">across ${totals.mintCount} coin${totals.mintCount === 1 ? '' : 's'}</p>`;
+}
+
+async function loadEarnings(q) {
+  const insights = document.getElementById('insights');
+  if (insights) insights.innerHTML = `<div class="card insights-loading">crunching per-coin earnings</div>`;
+
+  try {
+    const res = await fetch(`/api/earnings?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `request failed (${res.status})`);
+
+    earningsData = data;
+    if (insights) insights.innerHTML = renderInsights(data);
+    redrawCoinList();
+
+    const slot = document.getElementById('coin-earned');
+    if (slot) slot.innerHTML = renderCoinEarned(data);
+  } catch (err) {
+    // The summary above is still correct and useful — degrade, don't blank it.
+    if (insights) {
+      insights.innerHTML = `<div class="card insights-err">per-coin breakdown unavailable: ${escapeHtml(err.message || String(err))}</div>`;
+    }
+    const slot = document.getElementById('coin-earned');
+    if (slot) slot.innerHTML = `<p class="empty" style="border:0;padding:0">per-coin earnings unavailable</p>`;
+  }
+}
+
+// A coin's own payout record, for mint lookups.
+function renderCoinEarned(data) {
+  const c = data.coinEarnings;
+  if (!c) {
+    return `<p class="empty" style="border:0;padding:0">this coin has never paid this wallet. it shares fees, but no distribution has been made.</p>`;
+  }
+  const pct = c.shareOfEarningsPct;
+  return `
+    <div class="totals">
+      <div class="stat stat--hero">
+        <p class="label">Paid to this wallet</p>
+        <p class="sol">${formatSol(c.earned.sol)} SOL</p>
+        <p class="usd">$${formatUsd(c.earned.usd)}</p>
+      </div>
+      <div class="stat">
+        <p class="label">Distributions</p>
+        <p class="sol">${c.distributions}</p>
+        <p class="usd">${c.lastEarnedAt ? `last ${fmtAgo(c.lastEarnedAt)}` : 'never paid'}</p>
+      </div>
+      <div class="stat">
+        <p class="label">Of creator's total</p>
+        <p class="sol">${pct < 0.1 && pct > 0 ? '<0.1' : pct.toFixed(1)}%</p>
+        <p class="usd">${c.earnedLast30d.sol > 0 ? `${formatSol(c.earnedLast30d.sol)} SOL in 30d` : 'nothing in 30d'}</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderInsights(data) {
+  const i = data.insights;
+  if (!i || !i.coinCount) return '';
+
+  const top = i.topCoin;
+  const cards = [
+    {
+      label: 'earning coins',
+      value: `${i.earningCoinCount} <span class="of">of ${i.coinCount}</span>`,
+      sub: i.silentCoinCount ? `${i.silentCoinCount} never paid out` : 'every coin has paid',
+    },
+    {
+      label: 'top coin',
+      value: `${i.topCoinSharePct.toFixed(1)}%`,
+      sub: top ? `${escapeHtml(top.name || short(top.mint))} · ${formatSol(top.earned.sol)} SOL` : '',
+    },
+    {
+      label: 'earned last 30d',
+      value: `${formatSol(i.last30d.sol)} <span class="of">SOL</span>`,
+      sub: `$${formatUsd(i.last30d.usd, 0)}`,
+    },
+    {
+      label: 'concentration',
+      value: `${i.coinsFor90Pct} <span class="of">coin${i.coinsFor90Pct === 1 ? '' : 's'}</span>`,
+      sub: 'make up 90% of earnings',
+    },
+  ];
+
+  return `
+    <div class="card">
+      <p class="section-h">breakdown</p>
+      <div class="insights">
+        ${cards.map((c) => `
+          <div class="insight">
+            <p class="label">${c.label}</p>
+            <p class="value">${c.value}</p>
+            <p class="sub">${c.sub}</p>
+          </div>
+        `).join('')}
+      </div>
+      <p class="note">
+        per-coin figures are amounts actually distributed to this wallet, summed from each coin's
+        on-chain distribution events. pump.fun only reports unclaimed fees at the wallet level
+        (${formatSol(i.unclaimed?.sol ?? 0)} SOL still unclaimed), so it isn't attributed per coin.
+      </p>
+    </div>
+  `;
+}
+
+function sortedCoins() {
+  const coins = earningsData?.coins;
+  if (!coins) return null;
+  const by = {
+    earned: (a, b) => b.earned.sol - a.earned.sol,
+    recent: (a, b) => String(b.lastEarnedAt || '').localeCompare(String(a.lastEarnedAt || '')),
+    mcap: (a, b) => (b.marketCapUsd ?? 0) - (a.marketCapUsd ?? 0),
+    share: (a, b) => (b.sharePct ?? 0) - (a.sharePct ?? 0),
+  };
+  return [...coins].sort(by[coinSort] || by.earned);
+}
+
+function redrawCoinList() {
+  const list = document.getElementById('coin-list');
+  const coins = sortedCoins();
+  if (!list || !coins) return;
+  const max = Math.max(...coins.map((c) => c.earned.sol), 0);
+  list.innerHTML = coins.map((c) => coinRow(c, max)).join('');
 }
 
 async function loadTimeline(mint, cursor = null) {
@@ -359,26 +526,79 @@ function stat(label, v) {
   `;
 }
 
-function coinRow(c) {
+// `max` is the top earner's SOL, used to scale the bar. Pass null before the
+// earnings breakdown has landed — the row then shows a placeholder instead.
+function coinRow(c, max) {
   const href = `?q=${encodeURIComponent(c.mint)}`;
   const sym = c.symbol ? c.symbol.toUpperCase() : '';
+  const share = typeof c.sharePct === 'number' ? `${c.sharePct}% share` : '';
   const mc = typeof c.marketCapUsd === 'number' && c.marketCapUsd > 0
     ? `mcap $${formatUsd(c.marketCapUsd, 0)}`
     : '';
-  const share = typeof c.sharePct === 'number' ? `${c.sharePct}% share` : '';
+
+  const img = c.image
+    ? `<img src="${escapeAttr(c.image)}" alt="" loading="lazy" onerror="this.style.display='none'">`
+    : '<div class="coin-noimg"></div>';
+
+  let right;
+  if (!c.earned) {
+    right = `<div class="right"><span class="earn-skel"></span></div>`;
+  } else if (c.earned.sol > 0) {
+    const pctOfMax = max > 0 ? (c.earned.sol / max) * 100 : 0;
+    right = `
+      <div class="right">
+        <p class="earn">${formatSol(c.earned.sol)} <span class="unit">SOL</span></p>
+        <p class="earn-usd">$${formatUsd(c.earned.usd, 0)}</p>
+        <div class="bar" role="img" aria-label="${c.shareOfEarningsPct.toFixed(1)}% of all earnings">
+          <span style="width:${Math.max(pctOfMax, 1.5)}%"></span>
+        </div>
+        <p class="earn-meta">${c.distributions} payout${c.distributions === 1 ? '' : 's'} · ${c.lastEarnedAt ? fmtAgo(c.lastEarnedAt) : ''}</p>
+      </div>
+    `;
+  } else {
+    right = `
+      <div class="right">
+        <p class="earn earn--zero">never paid</p>
+        <p class="earn-meta">${escapeHtml(share)}</p>
+      </div>
+    `;
+  }
+
   return `
     <a class="coin-row" href="${href}">
-      ${c.image ? `<img src="${escapeAttr(c.image)}" alt="" onerror="this.style.display='none'">` : '<div style="width:32px;height:32px;border-radius:6px;background:var(--bg)"></div>'}
-      <div>
-        <p class="name">${escapeHtml(c.name || short(c.mint))} <span style="color:var(--muted)">${escapeHtml(sym)}</span></p>
-        <p class="meta">${escapeHtml(short(c.mint))}</p>
+      ${img}
+      <div class="coin-id">
+        <p class="name">${escapeHtml(c.name || short(c.mint))} <span class="sym">${escapeHtml(sym)}</span></p>
+        <p class="meta">${escapeHtml(short(c.mint))}${share ? ` · ${escapeHtml(share)}` : ''}${mc ? ` · ${mc}` : ''}</p>
       </div>
-      <div class="right">
-        ${share ? `<strong>${share}</strong><br>` : ''}
-        ${mc}
-      </div>
+      ${right}
     </a>
   `;
+}
+
+function skeletonTotals() {
+  return `
+    <div class="totals">
+      ${['', '', ''].map(() => `
+        <div class="stat">
+          <p class="label"><span class="skel skel--sm"></span></p>
+          <p class="sol"><span class="skel"></span></p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// "3d ago", "5mo ago" — a payout's recency is the signal, not its wall-clock date.
+function fmtAgo(ts) {
+  const then = new Date(ts).getTime();
+  if (!Number.isFinite(then)) return '';
+  const days = Math.floor((Date.now() - then) / 86_400_000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 30) return `${days}d ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
 }
 
 function formatSol(s) {
