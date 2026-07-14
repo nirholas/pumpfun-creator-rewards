@@ -1,0 +1,79 @@
+# Build + deploy the pumpfun-creator-rewards Cloud Run service.
+#
+#   npm run deploy
+#   # or directly:
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --region us-central1 --project aerial-vehicle-466722-p5
+#
+# BuildKit inline cache: an unchanged package-lock.json reuses the previous
+# image's npm layer instead of re-running `npm ci`.
+#
+# Both service accounts are pinned on purpose — the project's default compute
+# service account was deleted, so a build that falls back to it fails.
+
+steps:
+    - id: pull-cache
+      name: gcr.io/cloud-builders/docker
+      entrypoint: bash
+      args: ['-c', 'docker pull $_IMAGE || exit 0']
+
+    - id: build
+      name: gcr.io/cloud-builders/docker
+      env: ['DOCKER_BUILDKIT=1']
+      args:
+          [
+              'build',
+              '-t',
+              '$_IMAGE',
+              '--cache-from',
+              '$_IMAGE',
+              '--build-arg',
+              'BUILDKIT_INLINE_CACHE=1',
+              '.',
+          ]
+
+    - id: push
+      name: gcr.io/cloud-builders/docker
+      args: ['push', '$_IMAGE']
+
+    - id: deploy
+      name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+      entrypoint: gcloud
+      args:
+          [
+              'run',
+              'deploy',
+              'pumpfun-creator-rewards',
+              '--image',
+              '$_IMAGE',
+              '--project',
+              '$PROJECT_ID',
+              '--region',
+              'us-central1',
+              '--allow-unauthenticated',
+              '--memory',
+              '512Mi',
+              '--cpu',
+              '1',
+              '--timeout',
+              '60',
+              '--min-instances',
+              '0',
+              '--max-instances',
+              '10',
+              '--service-account',
+              'three-ws@aerial-vehicle-466722-p5.iam.gserviceaccount.com',
+          ]
+
+substitutions:
+    _IMAGE: us-central1-docker.pkg.dev/aerial-vehicle-466722-p5/cloud-run-source-deploy/pumpfun-creator-rewards:latest
+
+options:
+    machineType: E2_HIGHCPU_8
+    logging: CLOUD_LOGGING_ONLY
+
+serviceAccount: projects/aerial-vehicle-466722-p5/serviceAccounts/three-ws-build@aerial-vehicle-466722-p5.iam.gserviceaccount.com
+
+timeout: 1200s
+
+images: ['$_IMAGE']

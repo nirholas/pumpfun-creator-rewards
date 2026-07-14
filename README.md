@@ -2,7 +2,7 @@
 
 Look up Pump.fun creator-reward earnings by **coin mint**, **wallet address**, or **username**.
 
-Single-page web app with a JSON API. Live data, no mocks. Deploys to Vercel.
+Single-page web app with a JSON API. Live data, no mocks. Ships as one container on Google Cloud Run.
 
 ## What it shows
 
@@ -65,18 +65,37 @@ These are the same endpoints the live pump.fun frontend calls. Not affiliated wi
 
 ```bash
 npm install
-npm run dev          # vite on :3000, with /api/fees served by middleware
+npm run dev          # vite on :3000, all three /api routes served by middleware
 ```
 
 Open <http://localhost:3000> and try a mint, wallet, or username.
 
-## Deploy
+To run the production server (built assets + API, exactly what the container runs):
 
 ```bash
-vercel
+npm run serve        # build, then node server.js on :8080
 ```
 
-The `api/fees.js` route runs as a Node 20 serverless function; the static UI ships from `dist/`.
+## Architecture
+
+One container serves everything:
+
+- `server.js` — Node HTTP server. Static UI from `dist/` (hashed assets cached forever, `index.html` revalidated), `/api/*` routed to the handlers, `/health` for the platform probe.
+- `lib/node-adapter.js` — maps the `api/*.js` handlers (written against the Vercel `req.query` / `res.status().json()` signature) onto plain Node request and response objects. Both `server.js` and the Vite dev server mount it, so a route that works in dev works in production.
+- `api/*.js` — the three endpoints. No database, no secrets, no state: every response is derived live from the pump.fun APIs and a Solana RPC call.
+
+## Deploy (Google Cloud Run)
+
+```bash
+gcloud auth login              # once, if your token has expired
+npm run deploy
+```
+
+`npm run deploy` submits `cloudbuild.yaml` to Cloud Build, which builds the image with BuildKit inline caching (an unchanged `package-lock.json` skips `npm ci`), pushes it to Artifact Registry, and deploys it to the `pumpfun-creator-rewards` Cloud Run service in `us-central1`.
+
+The service scales to zero, so it costs nothing when idle. Both the build and runtime service accounts are pinned in `cloudbuild.yaml` on purpose: the project's default compute service account was deleted, and a build that falls back to it fails.
+
+Nothing needs to be configured for the app to run. There are no environment variables and no secrets.
 
 ## License
 

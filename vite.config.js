@@ -1,5 +1,5 @@
 const { defineConfig } = require('vite');
-const { createApiHandler } = require('./lib/dev-handler.js');
+const { createApiMiddleware } = require('./lib/node-adapter.js');
 
 module.exports = defineConfig({
   server: {
@@ -10,7 +10,9 @@ module.exports = defineConfig({
     {
       name: 'pumpfees-api-dev',
       configureServer(server) {
-        server.middlewares.use('/api/fees', createApiHandler());
+        // The same adapter the production server mounts, so /api/fees,
+        // /api/timeline and /api/xid all behave identically in dev.
+        server.middlewares.use(createApiMiddleware());
       },
     },
   ],
