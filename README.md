@@ -160,4 +160,4 @@ Nothing needs to be configured for the app to run. There are no environment vari
 
 ## License
 
-MIT
+All rights reserved. See [LICENSE](LICENSE).
