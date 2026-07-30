@@ -4,6 +4,14 @@ Look up Pump.fun creator-reward earnings by **coin mint**, **wallet address**, o
 
 Single-page web app with a JSON API. Live data, no mocks. Ships as one container on Google Cloud Run.
 
+**Live:** <https://pumpfun-creator-rewards-lp642k3kpa-uc.a.run.app>
+
+Try it directly:
+
+```bash
+curl "https://pumpfun-creator-rewards-lp642k3kpa-uc.a.run.app/api/fees?q=<mint|wallet|username>"
+```
+
 ## What it shows
 
 Given any of the three inputs:
