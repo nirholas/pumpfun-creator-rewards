@@ -33,6 +33,13 @@ The real per-coin figure comes from each coin's **distribution timeline**. Every
 
 One honest limitation: pump.fun reports **unclaimed** fees only at the wallet level, so unclaimed cannot be attributed per coin. Per-coin numbers are therefore amounts *distributed* (paid out), and they reconcile against `shareholderClaimed`, not `shareholderTotalEarned`. The UI says so.
 
+This distinction also matters for GitHub social-fee claim alerts. A withdrawal
+from a shared fee account does not contain a token mint and must not be assigned
+to the highest-market-cap linked coin. Use the per-coin distribution timeline
+when coin-level payment attribution is required; otherwise label the withdrawal
+`unresolved_pooled`. A GitHub claim is evidence of payment, not automatic proof
+that the identity created or endorses a token.
+
 ## API
 
 ### `GET /api/fees?q=<mint|wallet|username>`
