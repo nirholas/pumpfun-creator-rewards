@@ -1,0 +1,28 @@
+# pumpfun-creator-rewards
+
+> Look up Pump.fun creator-reward earnings by coin mint, wallet address, or username. Single-page web app with a JSON API. Live data, no mocks. Deploys to Vercel.
+
+pumpfun-creator-rewards is an open-source repository by nirholas, part of the three.ws ecosystem.
+
+## Docs
+
+- [README](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/README.md): install, usage and reference
+- [What it shows](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/README.md#what-it-shows)
+- [API](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/README.md#api)
+- [Data sources](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/README.md#data-sources)
+- [Local dev](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/README.md#local-dev)
+- [Architecture](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/README.md#architecture)
+- [Deploy (Google Cloud Run)](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/README.md#deploy-google-cloud-run)
+- [License](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/README.md#license)
+- [Documentation](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/README.md#documentation)
+- [AGENTS.md](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/AGENTS.md): guidance for coding agents
+- [Full text for LLMs](https://github.com/nirholas/pumpfun-creator-rewards/blob/HEAD/llms-full.txt): the README inlined
+
+## Project
+
+- [Source](https://github.com/nirholas/pumpfun-creator-rewards)
+- [Issues](https://github.com/nirholas/pumpfun-creator-rewards/issues)
+- [Discussions](https://github.com/nirholas/pumpfun-creator-rewards/discussions)
+- [Homepage](https://nirholas.github.io/pumpfun-creator-rewards/)
+- [three.ws](https://three.ws): the platform this is part of
+- [All repositories by nirholas](https://github.com/nirholas/nirholas#readme)

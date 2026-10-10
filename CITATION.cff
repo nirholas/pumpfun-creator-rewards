@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: "pumpfun-creator-rewards"
+abstract: "Look up Pump.fun creator-reward earnings by coin mint, wallet address, or username. Single-page web app with a JSON API. Live data, no mocks. Deploys to Vercel."
+repository-code: "https://github.com/nirholas/pumpfun-creator-rewards"
+url: "https://three.ws"
+authors:
+  - name: three.ws
+    website: "https://three.ws"
