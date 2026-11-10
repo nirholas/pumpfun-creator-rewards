@@ -1,0 +1,16 @@
+{
+  "name": "pumpfun-creator-rewards",
+  "version": "0.1.0",
+  "description": "Look up Pump.fun creator-reward earnings per coin by mint, wallet or username through a hosted JSON API.",
+  "author": {
+    "name": "nirholas"
+  },
+  "repository": "https://github.com/nirholas/pumpfun-creator-rewards",
+  "homepage": "https://nirholas.github.io/pumpfun-creator-rewards/",
+  "keywords": [
+    "pumpfun",
+    "solana",
+    "creator-rewards",
+    "analytics"
+  ]
+}
