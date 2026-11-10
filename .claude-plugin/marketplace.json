@@ -1,0 +1,21 @@
+{
+  "name": "pumpfun-creator-rewards",
+  "owner": {
+    "name": "nirholas"
+  },
+  "description": "Look up Pump.fun creator-reward earnings per coin by mint, wallet or username through a hosted JSON API.",
+  "plugins": [
+    {
+      "name": "pumpfun-creator-rewards",
+      "source": "./plugins/pumpfun-creator-rewards",
+      "description": "Look up Pump.fun creator-reward earnings per coin by mint, wallet or username through a hosted JSON API.",
+      "category": "data",
+      "tags": [
+        "pumpfun",
+        "solana",
+        "creator-rewards",
+        "analytics"
+      ]
+    }
+  ]
+}
